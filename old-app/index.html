@@ -775,16 +775,72 @@
     @media (max-width: 420px){ .bottom-nav{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));} .bottom-nav__item{min-height:42px;font-size:11px;} }
 
 
+    /* ===== Figma-style visual refresh (logic unchanged) ===== */
+    body{background:linear-gradient(180deg,#eef2ff 0%,#f8fafc 38%,#f8fafc 100%);}    
+    .home-hero h1{margin:0 0 2px;font-size:30px;}
+    .profile-trigger{width:42px;height:42px;border-radius:12px;border:1px solid #dbe2f3;background:#fff;box-shadow:0 6px 18px rgba(30,41,59,.08);font-size:20px;padding:0;flex-shrink:0;}
+    #todayStudyCard{background:#fff;border:1px solid #e5e7eb;border-radius:24px;box-shadow:0 12px 28px rgba(15,23,42,.08);} 
+    .quick-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    .quick-stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:10px 8px;text-align:center;}
+    .quick-stat .label{display:block;color:#64748b;font-size:11px;margin-bottom:4px;}
+    #learnSettingsCard h2{font-size:24px;margin-bottom:14px;}
+
+    #quizModal{background:linear-gradient(180deg,#f8fbff 0%,#ffffff 38%);} 
+    #quizModalBody{max-width:560px;margin:0 auto;width:100%;}
+    #flashAnswerBox{min-height:56dvh;border-radius:28px;border:1px solid #dbeafe;background:#fff;box-shadow:0 20px 45px rgba(59,130,246,.14);} 
+    #flashWordText{font-size:52px;}
+    #flashAnswerText{font-size:34px;color:#2563eb;}
+    #flashModeActions .actions{gap:14px;}
+    #dontKnowBtn,#knowBtn{height:70px !important;border-radius:18px !important;font-size:22px !important;font-weight:900;}
+    #dontKnowBtn{background:#fff1f2 !important;border:1px solid #fecdd3 !important;}
+    #knowBtn{background:linear-gradient(135deg,#22c55e,#16a34a) !important;color:#fff !important;border:1px solid #16a34a !important;}
+
+    .profile-backdrop{position:fixed;inset:0;background:rgba(2,6,23,.45);z-index:98;}
+    .profile-drawer{position:fixed;left:0;top:0;height:100dvh;width:min(320px,88vw);background:#fff;z-index:99;transform:translateX(-105%);transition:transform .25s ease;box-shadow:0 16px 48px rgba(15,23,42,.28);display:flex;flex-direction:column;}
+    .profile-drawer.open{transform:translateX(0);} 
+    .profile-head{padding:18px 16px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;}
+    .profile-close{border:none;background:transparent;color:#fff;font-size:20px;padding:2px 4px;}
+    .profile-user{width:56px;height:56px;border-radius:50%;background:#fff;color:#111827;display:flex;align-items:center;justify-content:center;font-size:28px;margin:10px 0 8px;}
+    .profile-name{font-weight:900;font-size:22px;}
+    .profile-title{display:inline-block;margin-top:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.22);font-size:12px;}
+    .profile-xp{margin-top:10px;font-size:13px;}
+    .profile-xpbar{height:8px;background:rgba(255,255,255,.35);border-radius:999px;overflow:hidden;margin-top:8px;}
+    #profileXpBar{height:100%;background:#fff;width:0%;}
+    .profile-menu{padding:12px;display:grid;gap:8px;}
+    .profile-menu button{border:1px solid #e2e8f0;background:#fff;border-radius:12px;padding:12px 14px;text-align:left;font-weight:700;}
+    .profile-foot{margin-top:auto;padding:14px;color:#64748b;font-size:13px;border-top:1px solid #e2e8f0;}
+
   </style>
 </head>
 
 <body>
   <header class="app-header compact-header">
-    <div>
+    <button id="profileDrawerOpenBtn" class="profile-trigger" type="button" aria-label="프로필 열기">☰</button>
+    <div class="home-hero">
       <h1>다시 돌아왔어요 👋</h1>
       <div class="sub" id="headerTodayProgress">오늘 진행 0 / 30 단어</div>
     </div>
   </header>
+
+  <div id="profileDrawerBackdrop" class="profile-backdrop hidden"></div>
+  <aside id="profileDrawer" class="profile-drawer" aria-hidden="true">
+    <div class="profile-head">
+      <button id="profileDrawerCloseBtn" class="profile-close" type="button">✕</button>
+      <div class="profile-user">👤</div>
+      <div class="profile-name">TOEIC 마스터</div>
+      <div class="profile-title" id="profileTitleBadge">초급 학습자</div>
+      <div class="profile-xp">Lv.<b id="profileLevel">1</b> · XP <b id="profileXpNow">0</b>/<b id="profileXpNeed">100</b></div>
+      <div class="profile-xpbar"><div id="profileXpBar"></div></div>
+    </div>
+    <div class="profile-menu">
+      <button id="profileGoHome" type="button">🏠 홈</button>
+      <button id="profileGoStats" type="button">📊 학습 통계</button>
+      <button id="profileGoSettings" type="button">⚙️ 설정</button>
+    </div>
+    <div class="profile-foot">
+      오늘 학습 <b id="profileTodaySolved">0</b>문제 · 연속 <b id="profileStreak">0</b>일
+    </div>
+  </aside>
 
   <div class="card" id="todayStudyCard">
     <div class="quick-stats">
@@ -1417,6 +1473,11 @@
     if(el("xpNeedPill")) el("xpNeedPill").textContent=info.nextTotal;
     if(el("xpToNext")) el("xpToNext").textContent=`다음 레벨까지 ${info.toNext} XP`;
     if(el("xpBar")) el("xpBar").style.width=`${info.pct}%`;
+    if(el("profileLevel")) el("profileLevel").textContent=String(info.level);
+    if(el("profileXpNow")) el("profileXpNow").textContent=String(xpTotal);
+    if(el("profileXpNeed")) el("profileXpNeed").textContent=String(info.nextTotal);
+    if(el("profileXpBar")) el("profileXpBar").style.width=`${info.pct}%`;
+    if(el("profileTitleBadge")) el("profileTitleBadge").textContent=info.level>=10?"상급 학습자":(info.level>=5?"중급 학습자":"초급 학습자");
     if(el("plantLevelText")) el("plantLevelText").textContent=`단어 나무 Lv.${info.level}`;
     if(el("plantNextText")) el("plantNextText").textContent=`다음 성장까지 ${info.toNext} XP`;
     if(plant){
@@ -1784,6 +1845,23 @@
   function closeSettingsOverlay(){ el("settingsOverlay").classList.add("hidden"); if(mainTabSettings) mainTabSettings.classList.remove("active"); }
   el("settingsCloseBtn").onclick=closeSettingsOverlay;
   el("settingsOverlay").addEventListener("click",(e)=>{ if(e.target===el("settingsOverlay")) closeSettingsOverlay(); });
+
+  function openProfileDrawer(){
+    el("profileDrawer")?.classList.add("open");
+    el("profileDrawerBackdrop")?.classList.remove("hidden");
+    if(el("profileDrawer")) el("profileDrawer").setAttribute("aria-hidden","false");
+  }
+  function closeProfileDrawer(){
+    el("profileDrawer")?.classList.remove("open");
+    el("profileDrawerBackdrop")?.classList.add("hidden");
+    if(el("profileDrawer")) el("profileDrawer").setAttribute("aria-hidden","true");
+  }
+  el("profileDrawerOpenBtn")?.addEventListener("click",openProfileDrawer);
+  el("profileDrawerCloseBtn")?.addEventListener("click",closeProfileDrawer);
+  el("profileDrawerBackdrop")?.addEventListener("click",closeProfileDrawer);
+  el("profileGoHome")?.addEventListener("click",()=>{ showMainPanel("home"); closeProfileDrawer(); });
+  el("profileGoStats")?.addEventListener("click",()=>{ showMainPanel("stats"); closeProfileDrawer(); });
+  el("profileGoSettings")?.addEventListener("click",()=>{ applySettingsToUI(); el("settingsOverlay").classList.remove("hidden"); if(mainTabSettings) mainTabSettings.classList.add("active"); closeProfileDrawer(); });
   el("settingsSaveBtn").onclick=()=>{
     saveCfg(readSettingsFromUI()); closeSettingsOverlay();
     const btn=el("settingsSaveBtn"); btn.textContent="✅ 저장됨!"; setTimeout(()=>btn.textContent="✅ 설정 저장",1200);
@@ -1844,6 +1922,8 @@
     if(el("studyCardStreak")) el("studyCardStreak").textContent=streak;
     if(el("studyCardBar")) el("studyCardBar").style.width=`${pct}%`;
     if(el("headerTodayProgress")) el("headerTodayProgress").textContent=`오늘 진행 ${today} / ${goal} 단어`;
+    if(el("profileTodaySolved")) el("profileTodaySolved").textContent=String(today);
+    if(el("profileStreak")) el("profileStreak").textContent=String(streakDays());
     updateMissionsAndBonuses(today);
     updateComebackBanner(today);
     updateXpUI();
@@ -2198,7 +2278,7 @@
     if(delay>0) setTimeout(reveal,delay); else reveal();
   };
 
-  el("knowBtn").onclick=()=>{ clearAllTimers(); markAttempt(true); const item=pool[idx]; score++; if(item) saveCorrectStat(item); saveResumeState(); goNext(); };
+  el("knowBtn").onclick=()=>{ clearAutoNext(); clearAllTimers(); markAttempt(true); const item=pool[idx]; score++; if(item) saveCorrectStat(item); el("feedback").innerHTML="<span class='ok'>좋아요! 다음 카드로 이동합니다.</span>"; saveResumeState(); setTimeout(goNext,320); };
   el("dontKnowBtn").onclick=()=>{
     clearAutoNext(); clearAllTimers();
     const item=pool[idx],cfg=loadCfg(),k=keyOf(item);
